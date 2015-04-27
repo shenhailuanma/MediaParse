@@ -3,7 +3,7 @@ import os
 import socket
 
 class Utility:
-	''' class utility '''
+    ''' class utility '''
     def __init__(self):
         # save the os name for utest to mock it.
         self.os_name = os.name;
