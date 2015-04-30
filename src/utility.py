@@ -1,6 +1,8 @@
 
 import os
 import socket
+import subprocess
+
 
 class Utility:
     ''' class utility '''
@@ -30,4 +32,18 @@ class Utility:
             return host[2];
         except:
             return [];
+
+
+    def do_command(self, cmd):
+        '''
+            do_command will use subprocess to do command, and then return the command return info.
+        '''
+        try:
+            child = subprocess.Popen(cmd,shell=True, stdout=subprocess.PIPE)
+            (out_data,out_err) = child.communicate() 
+
+            return 'success',out_data
+        except Exception,ex:
+            return 'error',str(ex)
+
 
