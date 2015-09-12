@@ -33,5 +33,5 @@ class Logger:
 
         self.logger.info('init over.')
 
-    def set_log_name(self, name):
-        
+    def set_log_file(self, log_path):
+
