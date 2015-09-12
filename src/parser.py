@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os
 import json
@@ -149,3 +151,8 @@ class Parser:
             IF 'last' == None, the last value of duration is the last video frames's duration;
         '''   
 
+
+
+if __name__ == "__main__":
+
+    parser = Parser()
