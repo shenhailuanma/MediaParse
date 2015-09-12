@@ -8,11 +8,13 @@ import logging
 
 from utility import Utility
 
+from common.Log import Log
+
 class Parser:
     '''
         the Parser that can parse the media files.
     '''
-    def __init__(self, ffprobe_path, url=None):
+    def __init__(self, url=None):
         '''
             init the parser
         '''
@@ -40,31 +42,8 @@ class Parser:
         # get utility
         self.utility = Utility()
 
-        # set the logger
-        self.log_level = logging.DEBUG
-        self.log_path = 'Parser.log'
 
-        self.logger = logging.getLogger('Parser')
-        self.logger.setLevel(self.log_level)
-
-        # create a handler for write the log to file.
-        fh = logging.FileHandler(self.log_path)
-        fh.setLevel(self.log_level)
-
-        # create a handler for print the log info on console.
-        ch = logging.StreamHandler()
-        ch.setLevel(self.log_level)
-
-        # set the log format
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh.setFormatter(formatter)
-        ch.setFormatter(formatter)
-
-        # add the handlers to logger
-        self.logger.addHandler(fh)
-        self.logger.addHandler(ch)
-
-        self.logger.info('init over.')
+        Log.logger.debug('Parser init over.')
 
     def set_media_url(self, url=None):
         '''
@@ -73,13 +52,14 @@ class Parser:
         try:
             if url != None:
                 self.media_info = url
+                Log.logger.info("set_media_url, url:%s." %(url))
             else:
-                self.logger.warning("set_media_url, path is None.")
+                Log.logger.error("set_media_url, path is None.")
                 return 'error','set_media_url, path is None.'
 
             return 'success','ok'
         except Exception,ex:
-            self.logger.error("set_media_url error:%s" %(ex))
+            Log.logger.error("set_media_url error:%s" %(ex))
             return 'error',str(ex)
 
     def set_parse_tool(self, path=None):
@@ -89,13 +69,14 @@ class Parser:
         try:
             if path != None:
                 self.parse_tool = path
+                Log.logger.info("set_parse_tool, path:%s." %(path))
             else:
-                self.logger.warning("set_parse_tool, path is None.")
+                Log.logger.warning("set_parse_tool, path is None.")
                 return 'error','set_parse_tool, path is None.'
 
             return 'success','ok'
         except Exception,ex:
-            self.logger.error("set_parse_tool error:%s" %(ex))
+            Log.logger.error("set_parse_tool error:%s" %(ex))
             return 'error',str(ex)
 
 
@@ -123,7 +104,7 @@ class Parser:
 
             return 'success',data
         except Exception,ex:
-            self.logger.error("get_media_info error:%s" %(ex))
+            Log.logger.error("get_media_info error:%s" %(ex))
             return 'error',str(ex)
 
 
@@ -155,4 +136,19 @@ class Parser:
 
 if __name__ == "__main__":
 
+    # set Log
+    Log.logger.set_logger('/var/log/Parser.log', 'debug', 'Main')
+    Log.logger.info("logger test.")
+    Log.logger.debug("logger test.")
+    Log.logger.warning("logger test.")
+    Log.logger.error("logger test.")
+
     parser = Parser()
+
+    parser.set_media_url('/root/out024.mkv')
+    parser.set_parse_tool('/root/MediaParse/_release/bin/ffprobe')
+
+    ret,data = parser.get_media_info('/root/out024.mkv')
+    Log.logger.debug("get_media_info ret:%s, data:%s." %(ret,data))
+
+
