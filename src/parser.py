@@ -83,7 +83,34 @@ class Parser:
     def do_parse(self):
         '''
             parse the meida which has been set in media_url.
+            return parse data.
         '''
+        try:
+
+            return 'success','ok'
+        except Exception,ex:
+            Log.logger.error("do_parse error:%s" %(ex))
+            return 'error',str(ex)
+
+
+    def file_media_parse_data(self, source, destion):
+        '''
+            parse the meida which has been set in media_url.
+            return parse data.
+        '''
+        try:
+            
+            cmd = '%s -show_frames  -i %s   -print_format json > %s' %(self.parse_tool, source, destion)
+            Log.logger.info("file_media_parse_data, cmd:%s." %(cmd))
+            ret,data = self.utility.do_command(cmd)
+
+            return 'success',data
+
+        except Exception,ex:
+            Log.logger.error("get_media_info error:%s" %(ex))
+            return 'error',str(ex)
+
+
 
     def has_been_parsed(self):
         '''
@@ -150,5 +177,7 @@ if __name__ == "__main__":
 
     ret,data = parser.get_media_info('/root/out024.mkv')
     Log.logger.debug("get_media_info ret:%s, data:%s." %(ret,data))
+
+    ret,data = parser.file_media_parse_data('/root/out024.mkv', '/tmp/out.json')
 
 
