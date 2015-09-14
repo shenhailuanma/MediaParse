@@ -22,13 +22,6 @@ class Parser:
         ### the needed tools
         self.parse_tool = '/bin/ffprobe'
 
-
-
-        ### the params need be set by user.
-        self.media_url = url
-
-
-
         ### the params will be set by self.
         
         # media_frames_info is very important, it's the base parse source of others.
@@ -45,22 +38,6 @@ class Parser:
 
         Log.logger.debug('Parser init over.')
 
-    def set_media_url(self, url=None):
-        '''
-            set the media url that want to be parsed.
-        '''
-        try:
-            if url != None:
-                self.media_info = url
-                Log.logger.info("set_media_url, url:%s." %(url))
-            else:
-                Log.logger.error("set_media_url, path is None.")
-                return 'error','set_media_url, path is None.'
-
-            return 'success','ok'
-        except Exception,ex:
-            Log.logger.error("set_media_url error:%s" %(ex))
-            return 'error',str(ex)
 
     def set_parse_tool(self, path=None):
         '''
@@ -172,12 +149,25 @@ if __name__ == "__main__":
 
     parser = Parser()
 
-    parser.set_media_url('/root/out024.mkv')
+    json_file_path = '/tmp/out.json'
+    meifa_file_path = '/root/out024.mkv'
+
     parser.set_parse_tool('/root/MediaParse/_release/bin/ffprobe')
 
-    ret,data = parser.get_media_info('/root/out024.mkv')
+    ret,data = parser.get_media_info(meifa_file_path)
     Log.logger.debug("get_media_info ret:%s, data:%s." %(ret,data))
 
-    ret,data = parser.file_media_parse_data('/root/out024.mkv', '/tmp/out.json')
 
+    ret,data = parser.file_media_parse_data(meifa_file_path, json_file_path)
+
+    # load the json file
+    Log.logger.debug("begin to load json file:%s." %(json_file_path))
+    json_data = json.load(file(json_file_path))
+    Log.logger.debug("load json over, data len:%s." %(len(json_data['frames'])))
+
+
+
+    # file data to database
+
+    
 
