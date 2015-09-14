@@ -70,7 +70,7 @@ class Parser:
             return 'error',str(ex)
 
 
-    def file_media_parse_data(self, source, destion):
+    def file_media_parse_frames_data(self, source, destion):
         '''
             parse the meida which has been set in media_url.
             return parse data.
@@ -78,16 +78,31 @@ class Parser:
         try:
             
             cmd = '%s -show_frames  -i %s   -print_format json > %s' %(self.parse_tool, source, destion)
-            Log.logger.info("file_media_parse_data, cmd:%s." %(cmd))
+            Log.logger.info("file_media_parse_frames_data, cmd:%s." %(cmd))
             ret,data = self.utility.do_command(cmd)
 
             return 'success',data
 
         except Exception,ex:
-            Log.logger.error("get_media_info error:%s" %(ex))
+            Log.logger.error("file_media_parse_frames_data error:%s" %(ex))
             return 'error',str(ex)
 
+    def file_media_parse_packets_data(self, source, destion):
+        '''
+            parse the meida which has been set in media_url.
+            return parse data.
+        '''
+        try:
+            
+            cmd = '%s -show_packets  -i %s   -print_format json > %s' %(self.parse_tool, source, destion)
+            Log.logger.info("file_media_parse_packets_data, cmd:%s." %(cmd))
+            ret,data = self.utility.do_command(cmd)
 
+            return 'success',data
+
+        except Exception,ex:
+            Log.logger.error("file_media_parse_packets_data error:%s" %(ex))
+            return 'error',str(ex)
 
     def has_been_parsed(self):
         '''
@@ -150,22 +165,32 @@ if __name__ == "__main__":
     parser = Parser()
 
     json_file_path = '/tmp/out.json'
-    meifa_file_path = '/root/out024.mkv'
+    #meifa_file_path = '/root/out024.mkv'
+    meifa_file_path = '/root/cctv5.ts'
 
     parser.set_parse_tool('/root/MediaParse/_release/bin/ffprobe')
 
     ret,data = parser.get_media_info(meifa_file_path)
     Log.logger.debug("get_media_info ret:%s, data:%s." %(ret,data))
 
-
-    ret,data = parser.file_media_parse_data(meifa_file_path, json_file_path)
-
+    Log.logger.debug("begin file_media_parse_frames_data.")
+    ret,data = parser.file_media_parse_frames_data(meifa_file_path, json_file_path)
+    Log.logger.debug("end of file_media_parse_frames_data.")
     # load the json file
     Log.logger.debug("begin to load json file:%s." %(json_file_path))
     json_data = json.load(file(json_file_path))
     Log.logger.debug("load json over, data len:%s." %(len(json_data['frames'])))
 
 
+    #Log.logger.debug("begin file_media_parse_packets_data.")
+    #ret,data = parser.file_media_parse_packets_data(meifa_file_path, json_file_path)
+    #Log.logger.debug("end of file_media_parse_packets_data.")
+
+
+    # load the json file
+    #Log.logger.debug("begin to load json file:%s." %(json_file_path))
+    #json_data = json.load(file(json_file_path))
+    #Log.logger.debug("load json over, data len:%s." %(len(json_data['packets'])))
 
     # file data to database
 
