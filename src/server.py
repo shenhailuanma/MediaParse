@@ -113,9 +113,18 @@ class Server:
 
             return '{"result":"success"}'
 
-        @route('/api/parse/:url')
-        def parse_file(url=None):
-            return "parse file: %s" %(url)
+        ###   The task type, support: "parse", "transcode", "slice" ...
+        ###   The API: create parse task
+        @route('/api/create/task/parse', method="POST")
+        def create_media_task():
+            '''
+                the post data format:
+                {
+                    "source": "xxx",  # the URL of the media, support FILE, HTTP, FTP
+                    ""
+                }
+            '''
+            return "create_media_task"
 
 
 
