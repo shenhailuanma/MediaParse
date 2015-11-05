@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import logging
 import os
@@ -6,8 +8,7 @@ from datetime import datetime
 import time
 
 #from parser import Parser
-from bottle import route, run, template, error, static_file, default_app
-
+import bottle
 
 
 
@@ -46,49 +47,49 @@ class Server:
         self.logger.addHandler(fh)
         self.logger.addHandler(ch)
 
+
+        self.file_path = os.path.realpath(__file__)
+        self.dir_path  = os.path.dirname(self.file_path)
+
         self.logger.info('init over.')
 
         # for test
         self.longtest_cnt = 0
 
-    def run(self):
+    
         #
-        @route('/')
-        @route('/index')
+        @bottle.route('/')
+        @bottle.route('/index')
         def index():
             return "Hello, this is Media Paser."
 
-        @route('/hello/<name>')
-        def hello(name):
-            return template('<b>Hello {{name}}</b>!', name=name)
-
-        @route('/images/:filename')
+        @bottle.route('/images/:filename')
         def send_image(filename=None):
-            # FIXME: the param 'root' should be define in other place, now just for test.
-            return static_file(filename, root='/root/MediaParse/html/images')
+            root_path = "%s/images" %(self.dir_path)
+            return bottle.static_file(filename, root=root_path)
 
-        @route('/css/:filename')
+        @bottle.route('/css/:filename')
         def send_css(filename=None):
-            # FIXME: the param 'root' should be define in other place, now just for test.
-            return static_file(filename, root='/root/MediaParse/html/css')
+            root_path = "%s/css" %(self.dir_path)
+            return bottle.static_file(filename, root=root_path)
 
 
 
-        @error(404)
+        @bottle.error(404)
         def error404(error):
             #return "Nothing here, sorry."
-            return static_file("404.html", "/root/MediaParse/html")
+            return bottle.static_file("404.html", "/root/MediaParse/html")
 
 
 
         ######################
         #API
         #################
-        @route('/api/gettime')
+        @bottle.route('/api/gettime')
         def gettime():
             return "%s" %(datetime.now())
 
-        @route('/api/longtest')
+        @bottle.route('/api/longtest')
         def longtest():
             cnt = self.longtest_cnt
             self.longtest_cnt += 1
@@ -106,7 +107,7 @@ class Server:
             return "%s" %(datetime.now())
 
 
-        @route('/api/get_mediainfo/:url')
+        @bottle.route('/api/get_mediainfo/:url')
         def get_mediainfo(url=None):
             if url == None:
                 return '{"result":"error","message":"url error."}'
@@ -115,7 +116,7 @@ class Server:
 
         ###   The task type, support: "parse", "transcode", "slice" ...
         ###   The API: create parse task
-        @route('/api/create/task/parse', method="POST")
+        @bottle.route('/api/create/task/parse', method="POST")
         def create_media_task():
             '''
                 the post data format:
@@ -123,13 +124,42 @@ class Server:
                     "source": "xxx",  # the URL of the media, support FILE, HTTP, FTP
                     ""
                 }
+
+                response:
+                {
+                    "result" : "success",               # "success" or "error"
+                    "message" : "create task ok.",      # string messages
+                    "task_id" : 25                      # The task id
+                }
             '''
+            response = {}
+            response['result'] = "success"
+            response['message'] = "create task ok."
+            response['task_id'] = -1
+
+            # get the post data
+            post_data = bottle.request.body.getvalue()
+            self.logger.debug('create_media_task,handle the request post data: %s' %(post_data))
+
+            post_data_json = json.loads(post_data)
+
+            # check the params
+            if not post_data_json.has_key('source'):
+                response['result'] = "error"
+                response['message'] = "params 'source' error."
+                return json.dumps(response)
+
+            # create the task
+            create_task_params = {}
+            create_task_params = post_data_json['source']
+            
+
             return "create_media_task"
 
 
 
-        # the 'host' need be modified to local ip address. 
-        #run(host=self.ip, port=self.port, debug=True)
+    def run(self):
+        bottle.run(host=self.ip, port=self.port, debug=True)
 
 
 
@@ -141,4 +171,4 @@ else:
     #os.chdir(os.path.dirname(__file__))
     server = Server('0.0.0.0', 9090, logging.DEBUG)
     server.run()
-    application = default_app()
+    application = bottle.default_app()
