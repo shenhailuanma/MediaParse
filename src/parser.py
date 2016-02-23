@@ -5,6 +5,7 @@ import os
 import json
 import subprocess
 import logging
+import ConfigParser
 
 from utility import Utility
 
@@ -18,7 +19,11 @@ class Parser:
         '''
             init the parser
         '''
+        conf = ConfigParser.ConfigParser()
+        conf.read('mediaparse.conf')
 
+        self.parse_tool = conf.get("parse", "parse_tool")
+        Log.logger.debug('parse_tool=%s.' %self.parse_tool)
         ### the needed tools
         self.parse_tool = '/bin/ffprobe'
 

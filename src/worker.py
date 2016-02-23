@@ -5,6 +5,8 @@ from common.Log import Logger
 from parser import Parser
 
 import time
+import ConfigParser
+
 
 class Worker:
     def __init__(self):
@@ -20,7 +22,7 @@ class Worker:
             self.get_task()
 
             # to parse the meida
-            
+
 
             # to put the parse data to database
 
