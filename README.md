@@ -1,16 +1,14 @@
 # MediaParse
-为了方便日常工作中对媒体流的分析，并对排查问题提供支持。
+    MediaParse is a media analysis tool which is through web.
 
-**v1.0目标**:
+** requirements **
+* python2.6 or python2.7
+* flask
+* redis
 
-* 分析时间戳（PTS, DTS, 时间戳间隔，帧类型），可生成csv数据，方便分析；
+** requirements **
 
-* 获取详尽的媒体信息（JSON结构）；
+** How to use **:
+* pip install flask
 
-* 码率分析
-
-
-**v2.0目标**:
-
-* web图表化分析
 
