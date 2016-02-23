@@ -5,7 +5,7 @@ import logging
 
 class Logger:
 
-    def __init__(self, log_path, log_level, log_name):
+    def __init__(self, log_path, log_level='warning', log_name='logger'):
 
         # set the logger
 
@@ -57,5 +57,4 @@ class Logger:
 
 
 class Log:
-
-    logger = Logger()
+    logger = Logger(log_path='/var/log/logger', log_level='debug', log_name='MediaParse')

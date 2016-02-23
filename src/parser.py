@@ -156,7 +156,7 @@ class Parser:
 if __name__ == "__main__":
 
     # set Log
-    Log.logger.set_logger('/var/log/Parser.log', 'debug', 'Main')
+    #Log.logger.set_logger('/var/log/Parser.log', 'debug', 'Main')
     Log.logger.info("logger test.")
     Log.logger.debug("logger test.")
     Log.logger.warning("logger test.")
@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     json_file_path = '/tmp/out.json'
     #meifa_file_path = '/root/out024.mkv'
-    meifa_file_path = '/root/cctv5.ts'
+    meifa_file_path = '/root/kiss.mp4'
 
     parser.set_parse_tool('/root/MediaParse/_release/bin/ffprobe')
 
