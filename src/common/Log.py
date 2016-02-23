@@ -5,7 +5,7 @@ import logging
 
 class Logger:
 
-    def set_logger(self, log_path, log_level, log_name):
+    def __init__(self, log_path, log_level, log_name):
 
         # set the logger
 
