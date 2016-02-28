@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os
 import socket
 import subprocess
-
+import json
+import redis
 
 class Utility:
     ''' class utility '''

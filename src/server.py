@@ -3,13 +3,16 @@
 
 import logging
 import os
-
-from datetime import datetime
+import json
 import time
+import uuid
+from datetime import datetime
 
-#from parser import Parser
+from common.Rqueue import Rqueue
+from config import config
+
 import bottle
-
+import redis
 
 
 
@@ -50,6 +53,11 @@ class Server:
 
         self.file_path = os.path.realpath(__file__)
         self.dir_path  = os.path.dirname(self.file_path)
+
+        # task queue
+        self.task_queue = Rqueue(name='parse_task')
+        self.redis = redis.Redis(host='localhost', port=6379, db=0)
+
 
         self.logger.info('init over.')
 
@@ -107,22 +115,15 @@ class Server:
             return "%s" %(datetime.now())
 
 
-        @bottle.route('/api/get_mediainfo/:url')
-        def get_mediainfo(url=None):
-            if url == None:
-                return '{"result":"error","message":"url error."}'
-
-            return '{"result":"success"}'
-
         ###   The task type, support: "parse", "transcode", "slice" ...
         ###   The API: create parse task
-        @bottle.route('/api/create/task/parse', method="POST")
+        @bottle.route('/api/mediaparse/create', method="POST")
         def create_media_task():
             '''
                 the post data format:
                 {
-                    "source": "xxx",  # the URL of the media, support FILE, HTTP, FTP
-                    ""
+                    "url": "xxx",  # the URL of the media, support FILE, HTTP, FTP
+                    "name" : "media name"
                 }
 
                 response:
@@ -132,30 +133,92 @@ class Server:
                     "task_id" : 25                      # The task id
                 }
             '''
-            response = {}
-            response['result'] = "success"
-            response['message'] = "create task ok."
-            response['task_id'] = -1
 
-            # get the post data
-            post_data = bottle.request.body.getvalue()
-            self.logger.debug('create_media_task,handle the request post data: %s' %(post_data))
+            try:
+                response = {}
+                response['result'] = "success"
+                response['message'] = "create task ok."
+                response['task_id'] = -1
 
-            post_data_json = json.loads(post_data)
+                # get the post data
+                post_data = bottle.request.body.getvalue()
+                self.logger.debug('create_media_task,handle the request post data: %s' %(post_data))
 
-            # check the params
-            if not post_data_json.has_key('source'):
+                post_data_json = json.loads(post_data)
+
+                # check the params
+                if not post_data_json.has_key('url'):
+                    response['result'] = "error"
+                    response['message'] = "params 'url' error."
+                    return json.dumps(response)
+
+                if  post_data_json.has_key('name'):
+                    post_data_json['name'] = post_data_json['name'].encode('utf-8')
+                else:
+                    post_data_json['name'] = 'default name'
+
+                # generate id
+                task_id = uuid.uuid1()
+                self.logger.debug('generate task_id: %s' %(task_id))
+
+
+                post_data_json['id'] = str(task_id)
+                post_data_json['status'] = 'created'
+                post_data_json['create_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+                # push to task queue
+                self.task_queue.push(task_id)
+                self.redis.hmset("parse_task:%s" %(task_id), post_data_json)
+                
+                # test
+                data = self.redis.hgetall("parse_task:%s" %(task_id))
+                self.logger.debug('task data : %s' %(json.dumps(data)))
+
+                response['task_id'] = str(task_id)
+                return "%s" %(json.dumps(response))
+
+            except Exception,ex:
+                self.logger.error("create_media_task error:%s" %(ex))
                 response['result'] = "error"
-                response['message'] = "params 'source' error."
+                response['message'] = str(ex)
                 return json.dumps(response)
 
-            # create the task
-            create_task_params = {}
-            create_task_params = post_data_json['source']
-            
 
-            return "create_media_task"
+        @bottle.route('/api/mediaparse/status/:task_id')
+        def get_mediaparse_task_status(task_id=None):
+            try:
+                response = {}
+                response['result'] = "success"
 
+                self.logger.debug('task_id: %s' %(task_id))
+                data = self.redis.hgetall("parse_task:%s" %(task_id))
+                self.logger.debug('task data : %s' %(json.dumps(data)))
+
+                response['task'] = data
+
+                return json.dumps(response)
+            except Exception,ex:
+                self.logger.error("get_mediaparse_task_status error:%s" %(ex))
+                response['result'] = "error"
+                response['message'] = str(ex)
+                return json.dumps(response)
+
+        @bottle.route('/api/mediaparse/delete/:task_id')
+        def delete_mediaparse_task(task_id=None):
+            try:
+                response = {}
+                response['result'] = "success"
+
+                self.logger.debug('task_id: %s' %(task_id))
+                data = self.redis.delete("parse_task:%s" %(task_id))
+
+                return json.dumps(response)
+            except Exception,ex:
+                self.logger.error("delete_mediaparse_task error:%s" %(ex))
+                response['result'] = "error"
+                response['message'] = str(ex)
+                return json.dumps(response)
 
 
     def run(self):

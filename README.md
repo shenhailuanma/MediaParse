@@ -6,9 +6,9 @@
 * flask
 * redis
 
-** requirements **
 
 ** How to use **:
 * pip install flask
+* pip install redis
 
 

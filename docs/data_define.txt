@@ -1,0 +1,20 @@
+
+1. system info
+
+2. task
+just a list, for example:
+parse_task = [task_id0, task_id1, ...]
+
+3. task info
+use hash, for example:
+
+parse_task:{task_id} = {
+    "id" : "task_id",
+    "url" : "media_url",
+    "name" : "media_name",
+    ...
+}
+
+4. task media data
+use list, list key name format should be:
+media_data:{task_id}
