@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>首页</title>
+<link  href="" type="text/css" rel="stylesheet"/>
+</head>
+
+<body>
+
+	<div id="contain">
+        <h1>Media Parse Task List </h1>
+        <table id="task_table" width="100%" border="0" cellpadding="10" cellspacing="1" bgcolor="#CCCCCC" style="margin:1em 0;">
+            <tbody>
+                <tr>
+                    <th width="50%" bgcolor="#DDEEFF">media name </th>
+					<th width="20%" bgcolor="#DDEEFF">create time </th>
+                    <th width="20%" bgcolor="#DDEEFF">status</th>
+					<th width="10%" class="sorting_disabled" style="vertical-align: middle;">operation</th>
+                </tr>
+                {% for task_one in task_all %}
+                <tr>
+                    <td>{{task_one.url}}</td>
+                    <td>{{task_one.create_time}}</td>
+                    <td>{{task_one.status}}</td>
+					<td><img src="../static/images/mz_btn_pull_down_sel.png" /></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+	</div>
+
+</body>
+</html>

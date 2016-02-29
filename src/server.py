@@ -10,21 +10,77 @@ from datetime import datetime
 
 from common.Rqueue import Rqueue
 from config import config
+from common.Log import Logger
 
-import bottle
 import redis
+import bottle
+import flask
+
+
+# set the logger
+logger = Logger('/var/log/MediaParse_server.log', 'debug', 'server')
 
 
 
 class Server:
+    def __init__(self):
+        self.task_queue = Rqueue(name='parse_task')
+        self.redis = redis.Redis(host='localhost', port=6379, db=0)
+
+    def get_tasks_info_all(self):
+        try:
+            tasks_info_all = []
+            tasks = self.redis.keys("parse_task:*")
+            for task_one in tasks:
+                task_info_one = None
+                task_info_one = self.redis.hgetall(task_one)
+                if task_info_one != None:
+                    tasks_info_all.append(task_info_one)
+
+            logger.debug("get_tasks_info_all len:%s" %(len(tasks_info_all)))
+            return tasks_info_all
+        except Exception,ex:
+            logger.error("get_tasks_info_all error:%s" %(ex))
+            return []
+
+    def delete_task(self, task_id):
+        try:
+            tasks_info_all = []
+
+        except Exception,ex:
+            logger.error("delete_task error:%s" %(ex))
+
+
+
+
+# get the server
+server = Server()
+app = flask.Flask(__name__)
+
+@app.route('/api/gettime')
+def gettime():
+    return "%s" %(datetime.now())
+
+@app.route('/')
+@app.route('/index')
+def index():
+    #return "Hello, this is Media Paser."
+    tasks_info_all = []
+    tasks_info_all = server.get_tasks_info_all()
+    return flask.render_template('index.html', task_all = tasks_info_all)
+
+
+
+if __name__ == "__main__":
+    app.run('0.0.0.0', 9090, debug = True,  threaded = True)
+
+
+
+class Server_old:
     def __init__(self, ip='0.0.0.0', port=9090 ,log_level=logging.DEBUG):
 
         self.ip   = ip
         self.port = port
-
-        # mark system start time
-        self.system_initialized = datetime.now()
-
 
         # set the logger
         self.log_level = logging.DEBUG
@@ -71,47 +127,11 @@ class Server:
         def index():
             return "Hello, this is Media Paser."
 
-        @bottle.route('/images/:filename')
-        def send_image(filename=None):
-            root_path = "%s/images" %(self.dir_path)
-            return bottle.static_file(filename, root=root_path)
-
-        @bottle.route('/css/:filename')
-        def send_css(filename=None):
-            root_path = "%s/css" %(self.dir_path)
-            return bottle.static_file(filename, root=root_path)
-
-
-
-        @bottle.error(404)
-        def error404(error):
-            #return "Nothing here, sorry."
-            return bottle.static_file("404.html", "/root/MediaParse/html")
-
-
-
         ######################
         #API
         #################
         @bottle.route('/api/gettime')
         def gettime():
-            return "%s" %(datetime.now())
-
-        @bottle.route('/api/longtest')
-        def longtest():
-            cnt = self.longtest_cnt
-            self.longtest_cnt += 1
-            sleep_time = 0
-            start = datetime.now()
-
-            while True:
-                self.logger.debug('Long test:%s, sleep_time:%s.' %(cnt, datetime.now() - start))
-                time.sleep(1)
-                sleep_time += 1
-                if sleep_time > 10 :
-                    break;
-
-
             return "%s" %(datetime.now())
 
 
@@ -226,12 +246,4 @@ class Server:
 
 
 
-if __name__ == "__main__":
-    server = Server('0.0.0.0', 9090, logging.DEBUG)
-    server.run()
-    run(host='0.0.0.0', port=9090, debug=True)
-else:
-    #os.chdir(os.path.dirname(__file__))
-    server = Server('0.0.0.0', 9090, logging.DEBUG)
-    server.run()
-    application = bottle.default_app()
+
