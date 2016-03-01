@@ -7,28 +7,35 @@
 </head>
 
 <body>
-
 	<div id="contain">
-        <h1>Media Parse Task List </h1>
+        <h1>Media Parse</h1>
+		<h3>System info</h3>
+		<h3>Media Parse Task List </h3>
+		<button id="bt_create" type="button" onclick="window.open('upload')">create</button>
         <table id="task_table" width="100%" border="0" cellpadding="10" cellspacing="1" bgcolor="#CCCCCC" style="margin:1em 0;">
             <tbody>
                 <tr>
-                    <th width="50%" bgcolor="#DDEEFF">media name </th>
+                    <th width="40%" bgcolor="#DDEEFF">media name </th>
 					<th width="20%" bgcolor="#DDEEFF">create time </th>
                     <th width="20%" bgcolor="#DDEEFF">status</th>
-					<th width="10%" class="sorting_disabled" style="vertical-align: middle;">operation</th>
+					<th width="20%" bgcolor="#DDEEFF">operation</th>
                 </tr>
                 {% for task_one in task_all %}
                 <tr>
                     <td>{{task_one.url}}</td>
                     <td>{{task_one.create_time}}</td>
                     <td>{{task_one.status}}</td>
-					<td><img src="../static/images/mz_btn_pull_down_sel.png" /></td>
+					<td>
+					  <button id="bt_analysis" type="button" onclick="alert('analysis!')">analysis</button>
+					  <button id="bt_delete" type="button" onclick="delete_task('{{task_one.id}}')">Delete</button>
+                    </td>
                 </tr>
                 {% endfor %}
+
             </tbody>
         </table>
 	</div>
-
+	<script type="text/javascript" src="../static/lib/jquery.min.js"></script>
+	<script type="text/javascript" src="../static/js/index.js"></script>
 </body>
 </html>
