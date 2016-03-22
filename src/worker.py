@@ -64,32 +64,76 @@ class Worker:
             self.logger.debug('Worker do_parse_file start.')
 
             # check must params
+            if task_info.has_key('id'):
+                task_id = task_info['id']
+            else:
+                self.logger.error("task_info has no param named 'id'.")
+                return
 
 
-            if task.has_key('url'):      
+            if task_info.has_key('url'):      
                 # to parse the meida
-                ret,data = self.parser.get_media_info(task['url'])
+                ret,data = self.parser.get_media_info(task_info['url'])
                 self.logger.debug("get_media_info ret:%s, data:%s." %(ret,data))
 
-                json_file_path = "/tmp/mdeia_parse_%s" %(task['id'])
-                self.logger.debug("begin file_media_parse_frames_data.")
-                ret,data = self.parser.file_media_parse_frames_data(task['url'], json_file_path)
-                self.logger.debug("end of file_media_parse_frames_data.")
+                # insert media info
+
+                json_file_path = "/tmp/mdeia_parse_%s" %(task_id)
+                self.logger.debug("begin file_media_parse_packets_data.")
+                ret,data = self.parser.file_media_parse_packets_data(task_info['url'], json_file_path)
+                self.logger.debug("end of file_media_parse_packets_data.")
+
                 # load the json file
                 self.logger.debug("begin to load json file:%s." %(json_file_path))
                 json_data = json.load(file(json_file_path))
-                self.logger.debug("load json over, data len:%s." %(len(json_data['frames'])))
-
+                
                 # to put the parse data to database
-                cnt = 0
-                for element in json_data['frames']:
-                    if cnt > 3:
-                        break
-                    self.logger.debug("put packet:%s." %(json.dumps(element)))
-                    pipe = self.redis.pipeline()
-                    pipe.rpush("media_data:%s" %(task['id']), element)
-                    pipe.execute()
-                    cnt += 1
+                if json_data.has_key('packets'):
+                    self.logger.debug("load json over, data len:%s." %(len(json_data['packets'])))
+                    cnt = 0
+                    for element in json_data['packets']:
+                        '''
+                            the frame data format:
+                            [
+                                {
+                                    "codec_type": "video",
+                                    "stream_index": 0,
+                                    "pts": 931840,
+                                    "pts_time": "60.666667",
+                                    "dts": 929792,
+                                    "dts_time": "60.533333",
+                                    "duration": 1024,
+                                    "duration_time": "0.066667",
+                                    "size": "3299",
+                                    "pos": "6575770",
+                                    "flags": "_"
+                                },
+                                {
+                                    "codec_type": "audio",
+                                    "stream_index": 1,
+                                    "pts": 2669568,
+                                    "pts_time": "60.534422",
+                                    "dts": 2669568,
+                                    "dts_time": "60.534422",
+                                    "duration": 1024,
+                                    "duration_time": "0.023220",
+                                    "size": "193",
+                                    "pos": "6579069",
+                                    "flags": "K"
+                                }
+                            ]
+                        '''
+                        self.logger.debug("put packet:%s." %(json.dumps(element)))
+                        if element.has_key('dts_time'):
+                            # push frame
+                            self.redis.zadd("stream_data:%s" %(task_id), json.dumps(element), element['dts_time'])
+                            cnt += 1
+
+                    self.logger.debug("has put packets cnt = %s." %(cnt))
+
+                else:
+                    self.logger.error("the parse data has no 'frames'." %(cnt))
+
 
         except Exception,ex:
             self.logger.error("error:%s" %(ex))

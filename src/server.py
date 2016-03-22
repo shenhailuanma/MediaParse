@@ -83,6 +83,18 @@ class Server:
         except Exception,ex:
             logger.error("create_task error:%s" %(ex))
 
+    def get_task_stream_data(self, task_id, start_time, end_time):
+        try:
+            logger.debug("get_task_stream_data id=%s, start_time=%s, end_time=%s" %(task_id, start_time, end_time))
+            # e.g: ZRANGEBYSCORE stream_data:cbd54cc6-e15f-11e5-b58c-00163e022b22 0 1
+             
+            data = self.redis.zrangebyscore('stream_data:%s' %(task_id), start_time, end_time)
+            logger.debug("get_task_stream_data len=%s" %(len(data)))
+            return data
+        except Exception,ex:
+            logger.error("delete_task error:%s" %(ex))
+            return []
+
 
 # get the server
 server = Server()
@@ -103,6 +115,11 @@ def index():
     except Exception,ex:
         logger.error("index error:%s" %(ex))
         return "Hello, this is Media Paser."
+
+@app.route('/analysis.html', methods=['GET'])
+def redis_monitor_page():
+    return flask.render_template('analysis.html')
+
 
 # api
 @app.route('/api/gettime')
@@ -180,6 +197,42 @@ def upload_file():
         logger.error("upload_file error:%s" %(ex))
         return 'error:%s' %(ex)
 
+
+@app.route('/api/task/data', methods=['GET','POST'])
+def api_task_data():
+    try:
+
+        response = {}
+
+        start_time = flask.request.form.get('start_time','null')
+        if start_time == 'null':
+            logger.warning("not get param start_time")
+            response['result'] = 'error'
+        else:
+            logger.debug("get param start_time=%s" %(start_time))
+
+        end_time = flask.request.form.get('end_time','null')
+        if end_time == 'null':
+            logger.warning("not get param end_time")
+            response['result'] = 'error'
+        else:
+            logger.debug("get param end_time=%s" %(end_time))
+
+        task_id = flask.request.form.get('task_id','null')
+        if task_id == 'null':
+            logger.warning("not get param task_id")
+            response['result'] = 'error'
+        else:
+            logger.debug("get param task_id=%s" %(task_id))
+
+        data = server.get_task_stream_data(task_id, start_time, end_time)
+        return json.dumps(data)
+
+    except Exception,ex:
+        logger.error("api_task_create error:%s" %(ex))
+        response['result'] = 'error'
+        response['message'] = '%s' %(ex)
+        return json.dumps(response)
 
 
 if __name__ == "__main__":
