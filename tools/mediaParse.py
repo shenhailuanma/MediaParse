@@ -55,13 +55,17 @@ import ConfigParser
 class MediaParser:
 
     def __init__(self, ffprobe=None):
+        # parse tools
         self.ffprobeBin = 'ffprobe'
+
+        # parse data
         self.mediaInfoFile = "mediainfo.json"
         self.streamInfoFile = "streams.json"
         self.packetInfoFile = "packets.ini"
         self.frameInfoFile = "frames.ini"
         self.ffprobeLog = "frames.log"
 
+        # parse result
         self.resultFile = "result.json"
 
         if ffprobe != None:
@@ -73,6 +77,8 @@ class MediaParser:
         self.parseResult['streams'] = []
         self.parseResult['packetCount'] = 0
         self.parseResult['frameCount'] = 0
+        self.warnings = []
+
 
     def parse(self, file, destDir=None):
 
@@ -217,6 +223,13 @@ class MediaParser:
         ret['avgGop'] = 0
         ret['minGop'] = 0
         ret['maxGop'] = 0
+        ret['gopList'] = ""
+
+        # pts dt
+        ret['maxDtPts'] = 0
+        ret['minDtPts'] = 0
+
+        # frame not decoded
 
         return ret
 
@@ -227,5 +240,5 @@ class MediaParser:
 if __name__ == "__main__":
 
     mediaParser = MediaParser("~/bin/ffprobe")
-    # mediaParser.parse("~/workspace/transcoding-engine/streams/error001-h264-nal-data-erro.mp4", "")
-    mediaParser.parse("~/workspace/transcoding-engine/streams/after_transcode_duration_reduce.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
+    mediaParser.parse("~/workspace/transcoding-engine/streams/error001-h264-nal-data-erro.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
+    # mediaParser.parse("~/workspace/transcoding-engine/streams/after_transcode_duration_reduce.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
