@@ -17,9 +17,9 @@ import flask
 os.system("mkdir -p " + Config.logDir)
 
 # set the logger
-logger = Logger(Config.logDir + '/server.log', 'debug', 'server')
+logger = Logger(Config.logDir + '/server.log', Config.logLevel, 'server')
 
-app = flask.Flask(__name__)
+app = flask.Flask(__name__, static_folder = "./dist/static", template_folder = "./dist")
 
 # web
 @app.route('/')
@@ -27,9 +27,7 @@ app = flask.Flask(__name__)
 def index():
     try:
         logger.info("request index")
-        return "Hello, this is Media Paser."
-        # tasks_info_all = []
-        # return flask.render_template('index.html', task_all = tasks_info_all)
+        return flask.render_template("index.html")
 
     except Exception,ex:
         logger.error("index error:%s" %(ex))
