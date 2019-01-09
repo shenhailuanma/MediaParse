@@ -72,12 +72,13 @@ class MediaParser:
             self.ffprobeBin = ffprobe
 
         # the result dict, the parse result will be set in it
+        self.resultDir = './'
         self.parseResult = {}
         self.parseResult['fileName'] = ""
         self.parseResult['streams'] = []
         self.parseResult['packetCount'] = 0
         self.parseResult['frameCount'] = 0
-        self.warnings = []
+        self.warnings = [] 
 
 
     def parse(self, file, destDir=None):
@@ -87,6 +88,7 @@ class MediaParser:
             print("run command:" + cmd)
             os.system(cmd)
             if os.path.isdir(destDir):
+                self.resultDir = destDir
                 if not destDir.endswith("/"):
                     destDir = destDir + "/"
 
@@ -118,6 +120,7 @@ class MediaParser:
                 retStreamOne['index'] = streamOne['index']
                 retStreamOne['type'] = streamOne['codec_type']
                 retStreamOne['codec'] = streamOne['codec_name']
+                
 
                 self.parseResult['streams'].append(retStreamOne)
 
@@ -137,16 +140,71 @@ class MediaParser:
                 dataJson[k] = v
                 if k == 'stream_index':
                     dataJson[k] = int(v)
+                if k == 'pts_time':
+                    dataJson[k] = float(v)
+                if k == 'dts_time':
+                    dataJson[k] = float(v)
+                if k == 'flags':
+                    dataJson[k] = v
 
-            streamOne = self.parseResult['streams'][dataJson['stream_index']]
 
-            streamOne['packetCount'] += 1
-            
-            # video gop
-            # if dataJson['codec_type'] == 'video':
+            if dataJson.has_key('stream_index'):
 
+                streamOne = self.parseResult['streams'][dataJson['stream_index']]
 
-            
+                # packet count
+                streamOne['packetCount'] += 1
+                
+                warmTsJumpTooLargeDt = 5.0
+                warmTsJumpBackDt = -1.0
+
+                # pts
+                dt = dataJson['pts_time'] - streamOne['lastPts']
+                if dt > streamOne['maxPtsDt']:
+                    streamOne['maxPtsDt'] = dt
+
+                if  dt < warmTsJumpBackDt:
+                    newItem = {}
+                    newItem['pts_time'] = dataJson['pts_time']
+                    newItem['dt'] = dt
+                    streamOne['warmTsJumpBack'].append(newItem)
+                
+                if dt > warmTsJumpTooLargeDt:
+                    newItem = {}
+                    newItem['pts_time'] = dataJson['pts_time']
+                    newItem['dt'] = dt
+                    streamOne['warmTsJumpTooLarge'].append(newItem)
+
+                streamOne['lastPts'] = dataJson['pts_time']
+
+                # dts
+                dt = dataJson['dts_time'] - streamOne['lastDts']
+                if dt > streamOne['maxDtsDt']:
+                    streamOne['maxDtsDt'] = dt
+                if  dt < warmTsJumpBackDt:
+                    newItem = {}
+                    newItem['dts_time'] = dataJson['dts_time']
+                    newItem['dt'] = dt
+                    streamOne['warmDtsJumpBack'].append(newItem)
+                
+                if dt > warmTsJumpTooLargeDt:
+                    newItem = {}
+                    newItem['dts_time'] = dataJson['dts_time']
+                    newItem['dt'] = dt
+                    streamOne['warmDtsJumpTooLarge'].append(newItem)
+
+                streamOne['lastDts'] = dataJson['dts_time']
+                
+
+                # video gop
+                if dataJson['codec_type'] == 'video':
+                    if streamOne['lastGopSize'] > 0 and dataJson['flags'] == 'K_':
+                        streamOne['gopList'].append(streamOne['lastGopSize'])
+                        streamOne['lastGopSize'] = 0
+                    
+                    streamOne['lastGopSize'] += 1
+            else:
+                print("Not found stream_index:" + str(dataOne))
 
 
         # frames count
@@ -163,9 +221,31 @@ class MediaParser:
                 dataJson[k] = v
                 if k == 'stream_index':
                     dataJson[k] = int(v)
+                if k == 'pkt_pts_time':
+                    dataJson['pts_time'] = float(v)
 
-            streamOne = self.parseResult['streams'][dataJson['stream_index']]
-            streamOne['frameCount'] += 1
+            if dataJson.has_key('stream_index'):
+                streamOne = self.parseResult['streams'][dataJson['stream_index']]
+                streamOne['frameCount'] += 1
+
+                warmTsJumpTooLargeDt = 5.0
+                warmTsJumpBackDt = -1.0
+
+                # pts
+                # if  dataJson['pts_time'] - streamOne['lastPtsFrame'] < warmTsJumpBackDt:
+                #     newItem = {}
+                #     newItem['pts_time'] = dataJson['pts_time']
+                #     newItem['dt'] = dataJson['pts_time'] - streamOne['lastPtsFrame']
+                #     streamOne['warmTsJumpBackFrame'].append(newItem)
+                
+                # if dataJson['pts_time'] - streamOne['lastPtsFrame'] > warmTsJumpTooLargeDt:
+                #     newItem = {}
+                #     newItem['pts_time'] = dataJson['pts_time']
+                #     newItem['dt'] = dataJson['pts_time'] - streamOne['lastPtsFrame']
+                #     streamOne['warmTsJumpTooLargeFrame'].append(newItem)
+
+                # streamOne['lastPtsFrame'] = dataJson['pts_time']
+
 
         print("### parsing data over")
 
@@ -190,6 +270,9 @@ class MediaParser:
 
         # get packets info
         cmd = self.ffprobeBin + " -i " + file + " -show_packets -print_format ini > " + self.packetInfoFile
+        print(cmd)
+        os.system(cmd)
+        cmd = self.ffprobeBin + " -i " + file + " -show_packets -print_format xml > " + self.packetInfoFile + '.xml'
         print(cmd)
         os.system(cmd)
 
@@ -220,14 +303,28 @@ class MediaParser:
         ret['frameCount'] = 0
 
         # video gop
-        ret['avgGop'] = 0
-        ret['minGop'] = 0
-        ret['maxGop'] = 0
-        ret['gopList'] = ""
+        # ret['avgGop'] = 0
+        # ret['minGop'] = 0
+        # ret['maxGop'] = 0
+        ret['lastGopSize'] = 0
+        ret['gopList'] = []
+        
 
         # pts dt
-        ret['maxDtPts'] = 0
-        ret['minDtPts'] = 0
+        ret['lastPts'] = 0.0
+        ret['warmTsJumpTooLarge'] = []
+        ret['warmTsJumpBack'] = []
+        ret['maxPtsDt'] = 0.0
+
+        ret['lastDts'] = 0.0
+        ret['warmDtsJumpTooLarge'] = []
+        ret['warmDtsJumpBack'] = []
+        ret['maxDtsDt'] = 0.0
+
+        # ret['lastPtsFrame'] = 0.0
+        # ret['warmTsJumpTooLargeFrame'] = []
+        # ret['warmTsJumpBackFrame'] = []
+
 
         # frame not decoded
 
@@ -240,5 +337,5 @@ class MediaParser:
 if __name__ == "__main__":
 
     mediaParser = MediaParser("~/bin/ffprobe")
-    mediaParser.parse("~/workspace/transcoding-engine/streams/error001-h264-nal-data-erro.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
-    # mediaParser.parse("~/workspace/transcoding-engine/streams/after_transcode_duration_reduce.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
+    # mediaParser.parse("~/workspace/transcoding-engine/streams/trans.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
+    mediaParser.parse("/Users/hanxun.zx/Downloads/transcode-not-stop-20190108.mp4", "/Users/hanxun.zx/gitbase/MediaParse/tools/temp")
